@@ -1,0 +1,38 @@
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Ambiente virtual ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Configuração sensível (tokens, credenciais) ───────────────────────────
+BackEnd/AI/config.py
+config.py
+
+# ── Dados locais gerados em runtime ───────────────────────────────────────
+BackEnd/AI/ofertahub.db
+BackEnd/AI/ofertahub.db-shm
+BackEnd/AI/ofertahub.db-wal
+BackEnd/AI/ofertas_aprovadas.json
+*.db
+*.db-shm
+*.db-wal
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log

@@ -1,0 +1,26 @@
+[Unit]
+Description=OfertaHub — Pipeline IA + Disparo Telegram
+# Só executa se a rede já estiver disponível
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+
+# ─── CAMINHOS — ajuste se mover o projeto ───────────────────────────────────
+WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI
+ExecStart=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/.venv/bin/python \
+          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI/pipeline.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Redireciona stdout+stderr para o journal do systemd
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ofertahub
+
+# Reinicia em caso de falha não-esperada (exit code != 0)
+Restart=on-failure
+RestartSec=60s
+
+[Install]
+WantedBy=default.target

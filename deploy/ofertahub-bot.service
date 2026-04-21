@@ -1,0 +1,24 @@
+[Unit]
+Description=OfertaHub — Bot Interativo (polling contínuo)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# ─── CAMINHOS — ajuste se mover o projeto ───────────────────────────────────
+WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI
+ExecStart=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/.venv/bin/python \
+          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI/bot_interativo.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ofertahub-bot
+
+# Reinicia automaticamente em caso de crash, com espera crescente
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

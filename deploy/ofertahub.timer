@@ -1,0 +1,19 @@
+[Unit]
+Description=OfertaHub — Gatilho de 60 em 60 minutos
+Requires=ofertahub.service
+
+[Timer]
+# Primeira execução: 2 minutos após o boot/login (evita corrida com a rede)
+OnBootSec=2min
+
+# Execuções subsequentes: a cada 60 minutos a partir do início anterior
+# Para 30 minutos, troque por: OnUnitActiveSec=30min
+OnUnitActiveSec=60min
+
+# Garante disparo imediato caso um ciclo tenha sido perdido (ex: PC desligado)
+Persistent=true
+
+Unit=ofertahub.service
+
+[Install]
+WantedBy=timers.target
