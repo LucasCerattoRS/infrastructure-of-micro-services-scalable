@@ -1,74 +1,106 @@
-💾 Save Point: OfertaHub (Fase 1 e 2 Concluídas)
-📌 Resumo Executivo
+# 💾 Save Point — OfertaHub
 
-O OfertaHub é um sistema automatizado de curadoria e disparo de ofertas. O núcleo duro (backend) e a integração com o primeiro canal de distribuição (Telegram) estão 100% operacionais e rodando de forma autônoma no sistema operacional (Fedora). O projeto encontra-se pausado aguardando a liberação de credenciais de APIs reais de afiliação (ex: Amazon).
-🏗️ Arquitetura Atual (O que está pronto)
+**Status:** Em produção (100% autônomo, mock data), publicado sob MIT em [github.com/LucasCerattoRS/Hub-de-Ofertas](https://github.com/LucasCerattoRS/Hub-de-Ofertas).
 
-O sistema foi desenhado de forma modular no diretório BackEnd/AI/:
+Pausado aguardando liberação das credenciais da Amazon Product Advertising API para sair do mock.
 
-    O Cérebro (gerente_ia.py & config.py):
+---
 
-        Lógica de triagem rigorosa implementada com sucesso em Python.
+## ✅ Fases concluídas
 
-        Avalia produtos com base no desconto real (%), nota mínima (ex: >4.0) e volume de avaliações (ex: >50).
+### Fase 1 — Cérebro
+- [`gerente_ia.py`](src/gerente_ia.py): fórmula `Score = (Wp·P) + (Wa·A) + (Wv·log₁₀V) − C_penalidade` (pesos 40/40/4).
+- Penalidades dinâmicas: volatilidade >30% no histórico (−8), histórico <3 registros (−3).
+- Pré-filtros: desconto ≥20%, nota ≥4.0, ≥50 avaliações, blacklist de marcas.
+- [`mock_api.py`](src/mock_api.py) com 14 produtos reais da Amazon BR cobrindo todos os caminhos de triagem.
 
-        Gera um Score de Oferta (0-100) combinando esses três fatores com pesos específicos.
+### Fase 2 — Disparo
+- [`disparador_telegram.py`](src/disparador_telegram.py): DMs segmentadas por categoria, `MarkdownV2` com regex de escape seguro (URL nunca passa pelo escape), botão inline `🛒 Comprar na Amazon`.
+- Hierarquia de exceções correta: `Forbidden` → marca inativo; `BadRequest` / `TelegramError` → apenas logam.
 
-        Exporta as ofertas aprovadas para ofertas_aprovadas.json.
+### Fase 3 — Assinatura
+- [`db.py`](src/db.py): SQLite WAL com 3 tabelas (`users`, `historico_precos`, `ofertas_enviadas`) + `UNIQUE INDEX` para deduplicação diária.
+- [`bot_interativo.py`](src/bot_interativo.py): `/start`, `/filtros` (teclado inline 2 colunas ✅/⬜), `/minhas_categorias`, `/cancelar`.
 
-    O Simulador (mock_api.py):
+### Fase 4 — Automação systemd (Fedora 43)
+- [`deploy/ofertahub-bot.service`](deploy/ofertahub-bot.service): `Type=simple` + `Restart=on-failure` (polling contínuo).
+- [`deploy/ofertahub.service`](deploy/ofertahub.service): `Type=oneshot` (pipeline).
+- [`deploy/ofertahub.timer`](deploy/ofertahub.timer): **a cada 30 min**, `Persistent=true`, `OnBootSec=2min`.
+- `loginctl enable-linger` mantém tudo vivo após logout.
 
-        Fornece dados de teste imitando a estrutura de uma API real de e-commerce, permitindo que a automação rode e seja testada sem acesso externo aprovado.
+### Fase 5 — Release
+- `.gitignore`, [`config.example.py`](src/config.example.py), [`requirements.txt`](requirements.txt), [`README.md`](README.md) com diagrama ASCII.
+- Licença MIT (Copyright © 2026 Lukas Tcheratto D'agnese).
+- StoreID real `ofertahub0f0-20` propagado em [`config.example.py`](src/config.example.py).
 
-    A Boca (disparador_telegram.py):
+---
 
-        Integração concluída com o bot do Telegram usando python-telegram-bot.
+## 🛑 Onde paramos
 
-        Lê o JSON gerado pelo Cérebro e envia as mensagens para o canal.
+Tudo funcional em modo mock. `config.py` local tem `partner_tag = "ofertahub0f0-20"` e `access_key`/`secret_key` em branco — o sistema cai automaticamente para `mock_api.py`.
 
-        Utiliza formatação rica (ParseMode.MARKDOWN_V2) e botões inline ("🛒 Comprar na Amazon") para maximizar a conversão.
+## 🚀 Próximos passos
 
-    A Orquestração e Automação (pipeline.py & systemd):
+1. **Fase 6 — PA-API real:** criar `amazon_api.py` expondo `buscar_produtos(categoria, limite)` e preencher `access_key`/`secret_key` em `config.py`. `gerente_ia.main()` já detecta credenciais e troca o import automaticamente.
+2. **Fase 7 — Frontend:** PWA Next.js consumindo `ofertahub.db` (ou o JSON) para indexação SEO.
+3. **Fase 8 — WhatsApp<!--  --> Cloud API:** `disparador_whatsapp.py` espelhando o mesmo pipeline.
 
-        Script pipeline.py une o Cérebro e a Boca em uma execução sequencial assíncrona.
+---
 
-        Automação nativa configurada no Linux via systemd user timers (ofertahub.service e ofertahub.timer).
+## 🌳 Árvore (pós-refactor)
 
-        O sistema roda a cada 60 minutos em background constante (loginctl enable-linger), com logs isolados.
+```
+ProjeoEmprendimento/
+├── src/                       # núcleo Python (antigo BackEnd/AI/)
+│   ├── bot_interativo.py
+│   ├── config.example.py
+│   ├── config.py              # IGNORADO
+│   ├── db.py
+│   ├── disparador_telegram.py
+│   ├── gerente_ia.py
+│   ├── mock_api.py
+│   ├── pipeline.py
+│   └── ofertahub.db           # IGNORADO (runtime)
+├── deploy/
+│   ├── ofertahub.service
+│   ├── ofertahub.timer
+│   └── ofertahub-bot.service
+├── design-system/             # Design System (MASTER.md + componentes)
+│   ├── MASTER.md
+│   └── components/
+│       ├── ProductCard.tsx
+│       └── TestGallery.tsx
+├── .venv/                     # IGNORADO
+├── .gitignore
+├── LICENSE
+├── README.md
+├── requirements.txt
+└── STATUS.md
+```
 
-🛑 Onde Paramos exata e tecnicamente
+---
 
-A lógica de filtragem e a automação do sistema operacional estão perfeitas. O fluxo atual consome dados simulados de e-commerce. A transição para um modelo de produção real depende apenas da troca da fonte de dados.
-🚀 Como Retomar (Próximos Passos para a IA e para o Lucas)
+## 💻 Cheat Sheet (Fedora)
 
-Quando você voltar ao projeto com acesso à API de afiliados, entregue este documento para a IA e solicite os seguintes passos:
+```bash
+# Próximo disparo do pipeline (deve mostrar ~30min)
+systemctl --user list-timers ofertahub.timer
 
-    Fase 1.5 - Integração da API Real:
+# Status do bot
+systemctl --user status ofertahub-bot.service
 
-        Criar o arquivo amazon_api.py (ou shopee_api.py).
+# Forçar ciclo manual
+systemctl --user start ofertahub.service
 
-        Implementar a conexão com a API oficial utilizando as credenciais recém-adquiridas.
+# Logs ao vivo
+journalctl --user -u ofertahub-bot -f
+journalctl --user -u ofertahub -n 50 --no-pager
 
-        Alterar o arquivo pipeline.py para importar a função de busca do novo arquivo real em vez do mock_api.py.
+# Pausar / retomar automação
+systemctl --user stop ofertahub.timer
+systemctl --user start ofertahub.timer
 
-    Fase 3 - Interface Web (A Montra):
-
-        Iniciar o desenvolvimento de um frontend leve (ex: Next.js / PWA).
-
-        Fazer com que este site consuma o banco de dados (ou o mesmo JSON gerado) para mostrar as ofertas indexáveis no Google para quem não usa Telegram.
-
-    Fase 4 - Expansão de Canais:
-
-        Desenvolver o disparador_whatsapp.py usando a Cloud API para espelhar as postagens do Telegram.
-
-💻 Cheat Sheet de Comandos (Fedora Linux)
-
-Para você não ter que decorar os comandos de gerenciamento do robô que ficou rodando no seu notebook:
-
-    Verificar se o robô vai rodar logo: systemctl --user list-timers ofertahub.timer
-
-    Parar a automação temporariamente: systemctl --user stop ofertahub.timer
-
-    Forçar o robô a rodar agora: systemctl --user start ofertahub.service
-
-    Ver o histórico de ofertas (Logs): journalctl --user -u ofertahub -n 50
+# Confirmar StoreID nos links gerados
+grep -o 'tag=[^"]*' src/ofertas_aprovadas.json | sort -u
+# → tag=ofertahub0f0-20
+```

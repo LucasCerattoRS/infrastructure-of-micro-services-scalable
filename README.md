@@ -44,13 +44,13 @@ O **OfertaHub** é um motor de recomendação que aplica uma fórmula de *Score*
 
 | Arquivo | Responsabilidade |
 |---|---|
-| [`BackEnd/AI/gerente_ia.py`](BackEnd/AI/gerente_ia.py) | Motor de triagem. Fórmula: `Score = (Wp·P) + (Wa·A) + (Wv·log₁₀V) − C_penalidade` |
-| [`BackEnd/AI/db.py`](BackEnd/AI/db.py) | Camada SQLite com WAL mode (concorrência segura entre bot e pipeline) |
-| [`BackEnd/AI/bot_interativo.py`](BackEnd/AI/bot_interativo.py) | Bot Telegram long-polling — gerencia assinaturas via inline keyboard |
-| [`BackEnd/AI/disparador_telegram.py`](BackEnd/AI/disparador_telegram.py) | Envio segmentado por categoria com deduplicação diária |
-| [`BackEnd/AI/pipeline.py`](BackEnd/AI/pipeline.py) | Orquestrador — entrypoint do systemd timer |
-| [`BackEnd/AI/mock_api.py`](BackEnd/AI/mock_api.py) | Mock da Amazon PA-API para testes offline |
-| [`BackEnd/AI/config.example.py`](BackEnd/AI/config.example.py) | Template de configuração (credenciais fora do Git) |
+| [`src/gerente_ia.py`](src/gerente_ia.py) | Motor de triagem. Fórmula: `Score = (Wp·P) + (Wa·A) + (Wv·log₁₀V) − C_penalidade` |
+| [`src/db.py`](src/db.py) | Camada SQLite com WAL mode (concorrência segura entre bot e pipeline) |
+| [`src/bot_interativo.py`](src/bot_interativo.py) | Bot Telegram long-polling — gerencia assinaturas via inline keyboard |
+| [`src/disparador_telegram.py`](src/disparador_telegram.py) | Envio segmentado por categoria com deduplicação diária |
+| [`src/pipeline.py`](src/pipeline.py) | Orquestrador — entrypoint do systemd timer |
+| [`src/mock_api.py`](src/mock_api.py) | Mock da Amazon PA-API para testes offline |
+| [`src/config.example.py`](src/config.example.py) | Template de configuração (credenciais fora do Git) |
 
 ### Stack
 
@@ -77,7 +77,7 @@ pip install -r requirements.txt
 ### 2. Configurar credenciais
 
 ```bash
-cd BackEnd/AI
+cd src
 cp config.example.py config.py
 ```
 
@@ -171,7 +171,7 @@ Score = (Wp × P) + (Wa × A) + (Wv × log₁₀(V)) − C_penalidade
      + 3  se menos de 3 registros no histórico       (historico_insuficiente)
 ```
 
-Teto teórico de 100 pontos. Produtos abaixo dos pré-filtros de `FILTRO` (desconto < 20%, nota < 4.0, avaliações < 50) são descartados antes do cálculo. Todos os pesos e limiares são ajustáveis em [`config.py`](BackEnd/AI/config.example.py).
+Teto teórico de 100 pontos. Produtos abaixo dos pré-filtros de `FILTRO` (desconto < 20%, nota < 4.0, avaliações < 50) são descartados antes do cálculo. Todos os pesos e limiares são ajustáveis em [`config.py`](src/config.example.py).
 
 ---
 
@@ -179,18 +179,17 @@ Teto teórico de 100 pontos. Produtos abaixo dos pré-filtros de `FILTRO` (desco
 
 ```
 ProjeoEmprendimento/
-├── BackEnd/
-│   └── AI/
-│       ├── bot_interativo.py
-│       ├── config.example.py       # versionado
-│       ├── config.py               # IGNORADO — tokens locais
-│       ├── db.py
-│       ├── disparador_telegram.py
-│       ├── gerente_ia.py
-│       ├── mock_api.py
-│       ├── pipeline.py
-│       ├── ofertahub.db            # IGNORADO — banco local
-│       └── ofertas_aprovadas.json  # IGNORADO — output de runtime
+├── src/
+│   ├── bot_interativo.py
+│   ├── config.example.py       # versionado
+│   ├── config.py               # IGNORADO — tokens locais
+│   ├── db.py
+│   ├── disparador_telegram.py
+│   ├── gerente_ia.py
+│   ├── mock_api.py
+│   ├── pipeline.py
+│   ├── ofertahub.db            # IGNORADO — banco local
+│   └── ofertas_aprovadas.json  # IGNORADO — output de runtime
 ├── deploy/
 │   ├── ofertahub.service
 │   ├── ofertahub.timer

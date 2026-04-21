@@ -7,9 +7,9 @@ Wants=network-online.target
 Type=simple
 
 # ─── CAMINHOS — ajuste se mover o projeto ───────────────────────────────────
-WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI
+WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/src
 ExecStart=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/.venv/bin/python \
-          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI/bot_interativo.py
+          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/src/bot_interativo.py
 # ─────────────────────────────────────────────────────────────────────────────
 
 StandardOutput=journal

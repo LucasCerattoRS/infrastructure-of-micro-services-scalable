@@ -8,9 +8,9 @@ Wants=network-online.target
 Type=oneshot
 
 # ─── CAMINHOS — ajuste se mover o projeto ───────────────────────────────────
-WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI
+WorkingDirectory=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/src
 ExecStart=/home/lukascerattiagnese/Documentos/ProjeoEmprendimento/.venv/bin/python \
-          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/BackEnd/AI/pipeline.py
+          /home/lukascerattiagnese/Documentos/ProjeoEmprendimento/src/pipeline.py
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Redireciona stdout+stderr para o journal do systemd

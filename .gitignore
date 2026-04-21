@@ -15,17 +15,18 @@ venv/
 env/
 
 # ── Configuração sensível (tokens, credenciais) ───────────────────────────
-BackEnd/AI/config.py
+src/config.py
 config.py
 
 # ── Dados locais gerados em runtime ───────────────────────────────────────
-BackEnd/AI/ofertahub.db
-BackEnd/AI/ofertahub.db-shm
-BackEnd/AI/ofertahub.db-wal
-BackEnd/AI/ofertas_aprovadas.json
+src/ofertahub.db
+src/ofertahub.db-shm
+src/ofertahub.db-wal
+src/ofertas_aprovadas.json
 *.db
 *.db-shm
 *.db-wal
+ofertas_aprovadas.json
 
 # ── IDE / Editor ──────────────────────────────────────────────────────────
 .vscode/
