@@ -43,11 +43,11 @@ CATEGORIAS_DISPONIVEIS = [
 AMAZON_API = {
     "access_key":  "",   # PREENCHA
     "secret_key":  "",   # PREENCHA
-    "partner_tag": "",   # PREENCHA  ex: "ofertahub-20"
+    "partner_tag": "",   # PREENCHA  ex: "ofertahub0f0-20"
     "region":      "us-east-1",
 }
 
-AFFILIATE_TAG = AMAZON_API["partner_tag"] or "ofertahub-20"
+AFFILIATE_TAG = AMAZON_API["partner_tag"] or "ofertahub0f0-20"
 
 # ── Telegram ──────────────────────────────────────────────────────────────
 # Crie um bot com @BotFather e cole o token aqui.
