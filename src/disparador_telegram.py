@@ -62,6 +62,52 @@ def formatar_mensagem(oferta: dict) -> str:
     )
 
 
+# ── Envio com fallback sendPhoto → sendMessage ────────────────────────────
+
+async def _enviar_com_fallback(
+    bot: Bot,
+    user_id: int,
+    texto: str,
+    teclado: InlineKeyboardMarkup,
+    imagem_url: str,
+) -> bool:
+    """
+    Tenta sendPhoto (imagem + caption). Se a URL for inválida/inacessível
+    — BadRequest típico: "wrong type of the web page content" ou
+    "failed to get HTTP URL content" — cai para sendMessage puro.
+    Forbidden e outros TelegramError propagam para o handler externo.
+
+    Retorna True se qualquer via conseguiu entregar a mensagem.
+    """
+    if imagem_url:
+        try:
+            await bot.send_photo(
+                chat_id=user_id,
+                photo=imagem_url,
+                caption=texto,                    # caption aceita MarkdownV2 (até 1024 chars)
+                parse_mode=ParseMode.MARKDOWN_V2,
+                reply_markup=teclado,
+            )
+            return True
+        except BadRequest as exc:
+            # URL quebrada, formato não suportado, etc. — fallback textual.
+            logger.warning("sendPhoto falhou (%s) — tentando sendMessage.", exc)
+
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text=texto,
+            parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=teclado,
+            disable_web_page_preview=False,
+        )
+        return True
+    except BadRequest as exc:
+        # Erro de formatação do próprio texto — não reenviar.
+        logger.error("BadRequest para user %d: %s", user_id, exc)
+        return False
+
+
 # ── Loop de disparo segmentado ─────────────────────────────────────────────
 
 async def disparar_ofertas() -> None:
@@ -88,8 +134,9 @@ async def disparar_ofertas() -> None:
             logger.info("Sem assinantes para '%s' — pulando.", categoria)
             continue
 
-        texto   = formatar_mensagem(oferta)
-        teclado = _teclado_compra(oferta["Link de Afiliado"])
+        texto     = formatar_mensagem(oferta)
+        teclado   = _teclado_compra(oferta["Link de Afiliado"])
+        imagem    = oferta.get("Imagem URL") or ""
 
         for user_id in usuarios:
             if asin and db.ja_enviado_hoje(user_id, asin):
@@ -97,27 +144,18 @@ async def disparar_ofertas() -> None:
                 continue
 
             try:
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=texto,
-                    parse_mode=ParseMode.MARKDOWN_V2,
-                    reply_markup=teclado,
-                    disable_web_page_preview=False,
-                )
-                if asin:
-                    db.registrar_envio(user_id, asin)
-                total_enviados += 1
-                logger.info("Enviado → %d | %s", user_id, oferta["Produto"][:45])
+                enviado = await _enviar_com_fallback(bot, user_id, texto, teclado, imagem)
+                if enviado:
+                    if asin:
+                        db.registrar_envio(user_id, asin)
+                    total_enviados += 1
+                    logger.info("Enviado → %d | %s", user_id, oferta["Produto"][:45])
                 await asyncio.sleep(0.05)   # respeita rate limit do Telegram (30 msg/s para DMs)
 
             except Forbidden:
                 # Usuário bloqueou o bot — marcamos inativo para não tentar novamente
                 logger.warning("User %d bloqueou o bot — marcando inativo.", user_id)
                 db.marcar_inativo(user_id)
-
-            except BadRequest as exc:
-                # Erro de formatação ou parâmetro inválido — NÃO inativa o usuário
-                logger.error("BadRequest para user %d: %s", user_id, exc)
 
             except TelegramError as exc:
                 # Erro de rede, flood control, etc. — tenta no próximo ciclo

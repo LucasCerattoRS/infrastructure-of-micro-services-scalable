@@ -43,7 +43,7 @@ Tudo funcional em modo mock. `config.py` local tem `partner_tag = "ofertahub0f0-
 
 1. **Fase 6 — PA-API real:** criar `amazon_api.py` expondo `buscar_produtos(categoria, limite)` e preencher `access_key`/`secret_key` em `config.py`. `gerente_ia.main()` já detecta credenciais e troca o import automaticamente.
 2. **Fase 7 — Frontend:** PWA Next.js consumindo `ofertahub.db` (ou o JSON) para indexação SEO.
-3. **Fase 8 — WhatsApp<!--  --> Cloud API:** `disparador_whatsapp.py` espelhando o mesmo pipeline.
+3. **Fase 8 — Automação e Multi-canal:** Utilizar o hub n8n (servidor MCP já configurado e ativo) para criar fluxos de distribuição visual para WhatsApp, Discord e Google Sheets, reduzindo a necessidade de scripts de disparo manuais.
 
 ---
 

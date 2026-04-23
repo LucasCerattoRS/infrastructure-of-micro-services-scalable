@@ -41,6 +41,7 @@ class Oferta:
     categoria: str
     score_oferta: float
     link_afiliado: str
+    imagem_url: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -54,6 +55,7 @@ class Oferta:
             "Categoria":         self.categoria,
             "Score Oferta":      round(self.score_oferta, 2),
             "Link de Afiliado":  self.link_afiliado,
+            "Imagem URL":        self.imagem_url,
         }
 
 
@@ -178,6 +180,7 @@ def processar_ofertas(produtos_brutos: list[dict]) -> list[Oferta]:
             categoria        = p.get("categoria", "Geral"),
             score_oferta     = score,
             link_afiliado    = link,
+            imagem_url       = p.get("imagem_url", ""),
         )
         aprovadas.append(oferta)
         logger.info("APROVADO   | %-55s | score=%.1f  desconto=%.1f%%", titulo[:55], score, desconto)

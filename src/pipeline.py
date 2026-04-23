@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from gerente_ia import processar_ofertas, exportar_json
-from mock_api import buscar_produtos          # substitua por amazon_api quando tiver credenciais
+from mock_api import buscar_produtos          # trocar por amazon_api quando PA-API for aprovada
 from disparador_telegram import disparar_ofertas
 
 logging.basicConfig(
