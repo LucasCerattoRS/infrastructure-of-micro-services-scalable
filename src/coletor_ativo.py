@@ -32,6 +32,7 @@ o Gerente IA.
 
 from __future__ import annotations
 
+import concurrent.futures
 import logging
 import random
 import re
@@ -169,11 +170,20 @@ def _extrair_asins_do_texto(texto: str) -> list[str]:
 def descobrir_asins_via_rss(limite: int = 20) -> list[str]:
     """
     Varre feeds RSS públicos e devolve ASINs únicos mencionados.
-    Links ofuscados (pelan.do, encurtadores) são resolvidos via HEAD.
+
+    Estratégia em duas passagens:
+      1. Passagem barata (sem I/O): regex sobre título + summary + link
+         direto. O que for capturável aqui nunca precisa de rede.
+      2. Passagem paralela (I/O-bound): links que não revelaram ASIN são
+         resolvidos via HEAD num ThreadPoolExecutor (max_workers=5), para
+         desofuscar shorteners (pelan.do, bit.ly, etc.) sem empilhar
+         latências sequenciais.
     """
     asins: list[str] = []
     vistos: set[str] = set()
+    links_pendentes: list[str] = []
 
+    # ── Passagem 1: extração directa do conteúdo já presente no feed ──
     for feed_url in _FEEDS_DESCOBERTA:
         logger.info("Lendo feed: %s", feed_url)
         try:
@@ -184,10 +194,12 @@ def descobrir_asins_via_rss(limite: int = 20) -> list[str]:
             )
             feed = feedparser.parse(resp.content)
         except Exception as exc:
-            logger.error("Falha ao parsear %s: %s", feed_url, exc)
+            logger.error("Falha ao ler %s: %s", feed_url, exc)
             continue
 
-        for entrada in feed.entries:
+        # Cap defensivo: nunca processamos mais do que o dobro do limite
+        # de entradas por feed — evita varrer feeds gigantes inteiros.
+        for entrada in feed.entries[: limite * 2]:
             if len(asins) >= limite:
                 return asins
 
@@ -198,18 +210,45 @@ def descobrir_asins_via_rss(limite: int = 20) -> list[str]:
             ]))
 
             achados = _extrair_asins_do_texto(blob)
+            if achados:
+                for asin in achados:
+                    if asin not in vistos:
+                        vistos.add(asin)
+                        asins.append(asin)
+                        if len(asins) >= limite:
+                            return asins
+            elif entrada.get("link"):
+                # ASIN está escondido atrás de shortener — adia para
+                # a passagem paralela em vez de bloquear já.
+                links_pendentes.append(entrada["link"])
 
-            # Se nada no blob, tenta resolver o link do post (pega redirects para Amazon).
-            if not achados and entrada.get("link"):
-                destino = _resolver_redirect(entrada["link"])
-                achados = _extrair_asins_do_texto(destino)
+    if not links_pendentes:
+        logger.info("Descoberta RSS: %d ASINs únicos (nenhum redirect necessário).", len(asins))
+        return asins
 
-            for asin in achados:
+    # ── Passagem 2: resolução paralela dos links ofuscados ──
+    logger.info(
+        "A resolver %d links ofuscados em paralelo (max_workers=5)...",
+        len(links_pendentes),
+    )
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+        futuros = {pool.submit(_resolver_redirect, link): link for link in links_pendentes}
+        for futuro in concurrent.futures.as_completed(futuros):
+            if len(asins) >= limite:
+                break
+            try:
+                destino = futuro.result()
+            except Exception as exc:
+                # Uma falha de thread não pode derrubar as outras.
+                logger.debug("Redirect falhou em %s: %s", futuros[futuro], exc)
+                continue
+
+            for asin in _extrair_asins_do_texto(destino):
                 if asin not in vistos:
                     vistos.add(asin)
                     asins.append(asin)
                     if len(asins) >= limite:
-                        return asins
+                        break
 
     logger.info("Descoberta RSS: %d ASINs únicos.", len(asins))
     return asins
