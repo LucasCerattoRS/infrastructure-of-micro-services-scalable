@@ -13,6 +13,12 @@ Motivo do congelamento (validado em 2026-04-22):
     página de CAPTCHA já na primeira requisição (Amazon classifica o
     host como automated).
 
+Re-validado em 2026-04-23:
+  - Raio-X estrutural (tests/raio_x_feed.py) confirma HTTP 404 em
+    pelando.com.br/rss e promobit.com.br/rss/hot/. Content-Type devolvido
+    é text/html (páginas de erro), não RSS.
+  - Scaffold permanece congelado à espera da aprovação PA-API (Opção A).
+
 Estratégia original (mantida para referência):
   1. RSS de agregadores → descobre ASINs candidatos.
   2. Scraping de /dp/{ASIN} → extrai título, preço, nota, avaliações, imagem.
@@ -192,6 +198,12 @@ def descobrir_asins_via_rss(limite: int = 20) -> list[str]:
                 headers={**_HEADERS_BASE, "User-Agent": _USER_AGENTS[0]},
                 timeout=_TIMEOUT_HTTP,
             )
+            if resp.status_code != 200:
+                logger.warning(
+                    "Feed %s devolveu HTTP %d — ignorando.",
+                    feed_url, resp.status_code,
+                )
+                continue
             feed = feedparser.parse(resp.content)
         except Exception as exc:
             logger.error("Falha ao ler %s: %s", feed_url, exc)
